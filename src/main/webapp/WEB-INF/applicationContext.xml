@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			            http://www.springframework.org/schema/beans/spring-beans.xsd
+			            http://www.springframework.org/schema/context
+			            http://www.springframework.org/schema/context/spring-context.xsd
+			            http://www.springframework.org/schema/mvc
+			            http://www.springframework.org/schema/mvc/spring-mvc.xsd
+			            http://www.springframework.org/schema/tx
+			            http://www.springframework.org/schema/tx/spring-tx.xsd
+			            http://mybatis.org/schema/mybatis-spring
+			            http://mybatis.org/schema/mybatis-spring.xsd ">
+
+    <!-- mybatis:scan会扫描org.fkit.dao包里的所有接口当作Spring的bean配置，之后可以进行依赖注入-->
+    <mybatis:scan base-package="org.fkit.hrm.dao"/>
+
+    <!-- 扫描org.fkit包下面的java文件，有Spring的相关注解的类，则把这些类注册为Spring的bean -->
+    <context:component-scan base-package="org.fkit.hrm"/>
+
+    <!-- 使用PropertyOverrideConfigurer后处理器加载数据源参数 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <!-- 配置c3p0数据源 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass" value="${database.driver}" />
+        <property name="jdbcUrl" value="${database.url}" />
+        <property name="user" value="${database.username}" />
+        <property name="password" value="${database.password}" />
+        <property name="loginTimeout" value="3000"></property>
+        <!--checkoutTimeout从池中拿未使用的连接，超时设置，如果没有设置，就不超时. -->
+        <property name="checkoutTimeout" value="30000"></property>
+        <property name="preferredTestQuery" value="select 1 from dual"></property>
+        <!--每18000秒检查所有连接池中的空闲连接。Default: 0 -->
+        <property name="idleConnectionTestPeriod" value="18000"></property>
+        <!--testConnectionOnCheckout:如果设置为true,每次从池中取一个连接，将做一下测试，使用automaticTestTable 或者 preferredTestQuery,做一条查询语句.看看连接好不好用，不好用，就关闭它，重新从池中拿一个. -->
+        <property name="testConnectionOnCheckout" value="true"></property>
+        <!--连接池中保留的最小连接数。-->
+        <property name="minPoolSize" value="5"></property>
+        <!--连接池中保留的最大连接数。-->
+        <property name="maxPoolSize" value="100"></property>
+        <!-- 初始化池大小 -->
+        <property name="initialPoolSize" value="10"></property>
+        <!--当连接池中的连接耗尽的时候c3p0一次同时获取的连接数。 -->
+        <property name="acquireIncrement" value="5"></property>
+        <!--从数据库获取新连接失败后重复尝试的次数。Default: 30 -->
+        <property name="acquireRetryAttempts" value="30"></property>
+        <property name="acquireRetryDelay" value="1000"></property>
+        <!--最大空闲时间,3600秒内未使用则连接被丢弃。若为0则永不丢弃。-->
+        <property name="maxIdleTime" value="3600"></property>
+    </bean>
+
+    <!-- 配置SqlSessionFactory，org.mybatis.spring.SqlSessionFactoryBean是Mybatis社区开发用于整合Spring的bean -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"
+          p:dataSource-ref="dataSource"/>
+
+    <!-- JDBC事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+          p:dataSource-ref="dataSource"/>
+
+    <!-- 启用支持annotation注解方式事务管理 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>
